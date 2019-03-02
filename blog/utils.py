@@ -2,17 +2,26 @@ from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
 
+from django.contrib.auth.mixins import UserPassesTestMixin
+
 from .models import *
 
+
+class PermTest(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
 
 class  ObjectDetailMixin:
     model = None
     template = None
 
+
     def get(self, request, slug):
         obj = get_object_or_404(self.model, slug__iexact=slug)
-        return render(request, self.template,
-        context={self.model.__name__.lower(): obj, 'admin_object': obj, 'detail': True})
+        context = {self.model.__name__.lower(): obj, 'admin_object': obj, 'detail': True, 'lol': 'kek'}
+        if self.model == Post:
+            context['comments'] = Comment.objects.filter(post__id=obj.id)
+        return render(request, self.template, context=context)
 
 
 class ObjectCreateMixin:
@@ -25,6 +34,7 @@ class ObjectCreateMixin:
 
     def post(self, request):
         bound_form = self.form_model(request.POST)
+        
         if bound_form.is_valid():
             new_obj = bound_form.save()
             return redirect(new_obj)

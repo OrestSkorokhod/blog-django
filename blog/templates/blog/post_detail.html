@@ -8,5 +8,26 @@
 {% block content %}
 
 <h1 class="mt-5">  {{ post.title }}  </h1>
+<h5>{{ post.date_pub }}</h5>
 <p>{{ post.body }}</p>
+///////////////////////////////////////////////////// <br>
+{% if comments  %}
+Comments:
+
+{% for comment in comments %}
+  <p>{{ comment.author }}:</p>
+  <p>{{ comment.description }}</p>
+  <p>{{ comment.date_pub  }}</p>
+  __________________________
+
+{% endfor %}
+{% else %}
+No comments, be first:
+{% endif %}
+
+{% if user.is_authenticated %}
+  <p><a class="" href="{% url 'comment_create_url' post.slug %}">Add new comment</a></p>
+{% else %}
+  <p><a class="nav-link" href="{% url 'login'%}?next={{request.path}}">Login to add comment</a> </p>
+{% endif %}
 {% endblock %}

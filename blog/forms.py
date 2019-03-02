@@ -1,5 +1,5 @@
 from django import forms
-from .models import Tag, Post
+from .models import Tag, Post, Comment
 from django.core.exceptions import ValidationError
 
 
@@ -42,3 +42,13 @@ class PostForm(forms.ModelForm):
         if new_slug == 'create':
             raise ValidationError('Slug may not be "Create"')
         return new_slug
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['description',]
+
+        widgets = {
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
+
+        }

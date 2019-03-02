@@ -1,5 +1,6 @@
 from django.db import models
 from django.shortcuts import reverse
+from django.contrib.auth.models import User
 # Create your models here.
 
 from django.utils.text import slugify
@@ -57,3 +58,30 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ['-title']
+
+
+class Comment(models.Model):
+    """
+    Model representing a comment against a blog post.
+    """
+    description = models.TextField(max_length=1000, db_index=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    date_pub = models.DateTimeField(auto_now_add=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ["date_pub"]
+
+    def get_create_url(self):
+        return reverse('comment_create_url', kwargs={'post': self.post})
+
+    def __str__(self):
+        """
+        String for representing the Model object.
+        """
+        len_title=75
+        if len(self.description)>len_title:
+            titlestring=self.description[:len_title] + '...'
+        else:
+            titlestring=self.description
+        return titlestring
