@@ -6,10 +6,12 @@ from .views import *
 
 
 urlpatterns = [
-    path('', posts_list, name='posts_list_url'),
+    path('', PostsList.as_view(), name='posts_list_url'),
     path('post/create/', PostCreate.as_view(), name='post_create_url'),
     path('post/<str:slug>/', PostDetail.as_view(), name='post_detail_url'),
     path('post/<str:slug>/addcomment', CommentCreate.as_view(), name='comment_create_url'),
+    path('post/<str:slug>/like', like_post, name='post_like_url'),
+    path('post/<str:slug>/dislike', dislike_post, name='post_dislike_url'),
     path('post/<str:slug>/update/', PostUpdate.as_view(), name='post_update_url'),
     path('post/<str:slug>/delete/', PostDelete.as_view(), name='post_delete_url'),
     path('tags/', tags_list, name='tags_list_url'),

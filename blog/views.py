@@ -5,60 +5,89 @@ from django.views.generic import View
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
-from .models import Post, Tag, Comment
+from .models import Post, Tag, Comment, Like
 from .utils import *
 from .forms import TagForm, PostForm, CommentForm
 
 from django.contrib import auth
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 
 from django.db.models import Q
 
+class PostsList(View):
+
+    def get(self, request):
+        search_query = request.GET.get('search', '')
+        if search_query:
+            posts = Post.objects.filter(Q(title__icontains=search_query)| Q(body__icontains=search_query))
+        else:
+            posts = Post.objects.all()
 
 
-def posts_list(request):
-    search_query = request.GET.get('search', '')
-    if search_query:
-        posts = Post.objects.filter(Q(title__icontains=search_query)| Q(body__icontains=search_query))
-    else:
-        posts = Post.objects.all()
+        paginator = Paginator(posts, 3)
 
+        comments = Comment.objects.all()
+        likes = Like.objects.all()
 
-    paginator = Paginator(posts, 3)
+        page_number = request.GET.get('page', 1)
+        page = paginator.get_page(page_number)
 
-    comments = Comment.objects.all()
+        for post in page:
+            post.count_of_comments = 0
+            post.count_of_likes = 0
+            post.fan_users = []
+            for comment in comments:
+                if comment.post == post:
+                    post.count_of_comments += 1
+            for like in likes:
+                if like.post == post:
+                    post.count_of_likes += 1
+                    post.fan_users.append(like.user)
 
-    page_number = request.GET.get('page', 1)
-    page = paginator.get_page(page_number)
-    for post in page:
-        post.count_of_comments = 0
-        for comment in comments:
-            if comment.post == post:
-                post.count_of_comments += 1
+        is_paginated = page.has_other_pages()
 
-    is_paginated = page.has_other_pages()
+        if page.has_previous():
+            previous_url = '?page={}'.format(page.previous_page_number())
+        else:
+            previous_url = ''
 
-    if page.has_previous():
-        previous_url = '?page={}'.format(page.previous_page_number())
-    else:
-        previous_url = ''
+        if page.has_next():
+            next_url = '?page={}'.format(page.next_page_number())
+        else:
+            next_url = ''
 
-    if page.has_next():
-        next_url = '?page={}'.format(page.next_page_number())
-    else:
-        next_url = ''
+        context = {
+        'page_object': page,
+        'is_paginated': is_paginated,
+        'next_url': next_url,
+        'prev_url': previous_url,
+        }
 
-    context = {
-    'page_object': page,
-    'is_paginated': is_paginated,
-    'next_url': next_url,
-    'prev_url': previous_url,
+        return render(request, 'blog/index.html', context=context)
 
-    }
-
-
-    return render(request, 'blog/index.html', context=context)
+        # def post(self, request, slug, username):
+        #     return redirect('')
+@login_required
+def like_post(request, slug):
+    user = request.user
+    post = Post.objects.get(slug__iexact=slug)
+    like = Like()
+    like.post = post
+    like.user = user
+    like.save()
+    return redirect('posts_list_url')
+@login_required
+def dislike_post(request, slug):
+    user = request.user
+    post = Post.objects.get(slug__iexact=slug)
+    # like = Like()
+    # like.post = post
+    # like.user = user
+    obj = Like.objects.get(post=post, user=user)
+    obj.delete()
+    return redirect('posts_list_url')
 
 class CommentCreate(LoginRequiredMixin, View):
     form_model = CommentForm

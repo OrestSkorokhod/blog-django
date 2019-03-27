@@ -85,3 +85,7 @@ class Comment(models.Model):
         else:
             titlestring=self.description
         return titlestring
+
+class Like(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
